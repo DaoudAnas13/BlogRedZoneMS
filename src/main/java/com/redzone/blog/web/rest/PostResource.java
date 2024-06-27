@@ -1,5 +1,7 @@
 package com.redzone.blog.web.rest;
 
+import com.redzone.blog.client.ProductFeign;
+import com.redzone.blog.client.ProductFeignDTO;
 import com.redzone.blog.domain.Post;
 import com.redzone.blog.repository.PostRepository;
 import com.redzone.blog.web.rest.errors.BadRequestAlertException;
@@ -13,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,9 +42,11 @@ public class PostResource {
     private String applicationName;
 
     private final PostRepository postRepository;
+    private final ProductFeign productFeign;
 
-    public PostResource(PostRepository postRepository) {
+    public PostResource(PostRepository postRepository, ProductFeign productFeign) {
         this.postRepository = postRepository;
+        this.productFeign = productFeign;
     }
 
     /**
@@ -102,6 +105,10 @@ public class PostResource {
         } else {
             page = postRepository.findAll(pageable);
         }
+
+        List<ProductFeignDTO> productFeignDTOS = productFeign.findAllProducts(pageable);
+        log.debug("THIS IS PRODUCTS FROM STORE MICROSERVICE {}",productFeignDTOS);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
